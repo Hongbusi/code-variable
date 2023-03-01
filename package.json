@@ -15,29 +15,13 @@
       "mode": "view"
     }
   ],
-  "preferences": [
-    {
-      "name": "app_key",
-      "type": "textfield",
-      "required": true,
-      "title": "APP Key",
-      "description": "You can get Youdao Translate APP code at https://ai.youdao.com/console/",
-      "placeholder": "Youdao Translate APP code"
-    },
-    {
-      "name": "app_secret",
-      "type": "password",
-      "required": true,
-      "title": "APP Secret",
-      "description": "You can get Youdao Translate APP secret at https://ai.youdao.com/console/",
-      "placeholder": "Youdao Translate APP Secret"
-    }
-  ],
   "dependencies": {
     "@raycast/api": "^1.48.5",
+    "lodash-es": "^4.17.21",
     "node-fetch": "^3.3.0"
   },
   "devDependencies": {
+    "@types/lodash-es": "^4.17.6",
     "@types/node": "^18.14.2",
     "@types/react": "^18.0.28",
     "@typescript-eslint/eslint-plugin": "^5.54.0",

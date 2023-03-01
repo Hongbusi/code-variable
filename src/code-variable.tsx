@@ -1,66 +1,67 @@
-import crypto from "crypto";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import fetch from "node-fetch";
-import { Action, ActionPanel, Color, Icon, List, getPreferenceValues } from "@raycast/api";
-
-interface translateWebResult {
+import { sample } from "lodash-es";
+import { Action, ActionPanel, Color, Icon, List } from "@raycast/api";
+import { format }  from './utils'
+interface TranslateWebResult {
   value: Array<string>;
   key: string;
 }
 
-interface translateResult {
+interface TranslateResult {
   translation?: Array<string>;
-  isWord: boolean;
   basic?: { phonetic?: string; explains?: Array<string> };
-  l: string;
-  web?: Array<translateWebResult>;
-  webdict?: { url: string };
+  web?: Array<TranslateWebResult>;
   errorCode: string;
 }
 
-function getTranslateUrl(params: { q: string; appKey: string; from: string; to: string; salt: string; sign: string }) {
-  return `https://openapi.youdao.com/api?${new URLSearchParams(params).toString()}`;
+// 此 key 全采集于 github 上面，若有冒犯就先谢罪了啊哈...
+const FIXED_KEY = [
+  { keyfrom: "CoderVar", key: "802458398" },
+  { keyfrom: "whatMean", key: "1933652137" },
+  { keyfrom: "chinacache", key: "1247577973" },
+  { keyfrom: "huipblog", key: "439918742" },
+  { keyfrom: "chinacache", key: "1247577973" },
+  { keyfrom: "fanyi-node", key: "593554388" },
+  { keyfrom: "wbinglee", key: "1127870837" },
+  { keyfrom: "forum3", key: "1268771022" },
+  { keyfrom: "node-translator", key: "2058911035" },
+  { keyfrom: "kaiyao-robot", key: "2016811247" },
+  { keyfrom: "stone2083", key: "1576383390" },
+  { keyfrom: "myWebsite", key: "423366321" },
+  { keyfrom: "leecade", key: "54015339" },
+  { keyfrom: "github-wdict", key: "619541059" },
+  { keyfrom: "lanyuejin", key: "2033774719" },
+];
+
+const PREFIX = ["xt ", "dt ", "xh ", "cl ", "zh "]
+
+function getTranslateUrl(params: { keyfrom: string; key: string; type: string; doctype: string; version: string; q: string }) {
+  return `http://fanyi.youdao.com/openapi.do?${new URLSearchParams(params).toString()}`;
 }
 
-function generateSign(content: string, salt: number, app_key: string, app_secret: string) {
-  const md5 = crypto.createHash("md5");
-  md5.update(app_key + content + salt + app_secret);
-  const cipher = md5.digest("hex");
-  return cipher.slice(0, 32).toUpperCase();
+function startsWith(content: string) {
+  return PREFIX.includes(content.substring(0, 3))
 }
 
-function handleContent(content: string, handle_annotation: boolean) {
-  const annotations = ["///", "//!", "/*", "*/", "//"];
-  if (handle_annotation) {
-    for (const annotation of annotations) {
-      while (content.includes(annotation)) content = content.replace(annotation, "");
-    }
+function handleContent(content: string) {
+  if(startsWith(content)) {
+    return content.substring(3)
   }
-
-  while (content.includes("\r")) content = content.replace("\r", "");
-
-  const contentList = content.split("\n");
-  for (const i in contentList) {
-    contentList[i] = contentList[i].trim();
-    if (contentList[i] === "") contentList[i] = "\n\n";
-  }
-  content = contentList.join(" ");
-  return content;
+  return ''
 }
 
-function translateAPI(content: string, from_language: string, to_language: string) {
-  const { app_key, app_secret, handle_annotation } = getPreferenceValues();
-  const q = Buffer.from(handleContent(content, handle_annotation)).toString();
-  const salt = Date.now();
-  const sign = generateSign(q, salt, app_key, app_secret);
+function translateAPI(content: string) {
+  const q = handleContent(content)
+  const selected = sample(FIXED_KEY);
 
   const url = getTranslateUrl({
+    keyfrom: selected.keyfrom,
+    key: selected.key,
+    type: 'data',
+    doctype: 'json',
+    version: '1.1',
     q,
-    appKey: app_key,
-    from: from_language,
-    to: to_language,
-    salt: String(salt),
-    sign,
   });
 
   return fetch(url, {
@@ -69,46 +70,52 @@ function translateAPI(content: string, from_language: string, to_language: strin
   });
 }
 
-function TranslateResultActionPanel(props: { copyContent: string; url: string | undefined }) {
-  const { copyContent, url } = props;
+function formatTranslateResult(translateResult: TranslateResult, prefix: string) {
+  const result = { translation: [] };
+  const reg = /^[a-zA-Z ]/;
+  const { translation, basic, web } = translateResult;
+
+  translation?.forEach(item => {
+    if (reg.test(item)) {
+      result.translation.push(format(item, prefix));
+    }
+  })
+
+  return result
+}
+
+function TranslateResultActionPanel(props: { copyContent: string }) {
+  const { copyContent } = props;
   return (
     <ActionPanel>
       <Action.CopyToClipboard content={copyContent} />
-      {url ? <Action.OpenInBrowser url={url} /> : null}
     </ActionPanel>
   );
 }
 
-const defaultTranslateResult: translateResult = {
+const defaultTranslateResult: TranslateResult = {
   basic: {},
-  isWord: false,
-  l: "",
   translation: undefined,
   web: undefined,
-  webdict: { url: "" },
   errorCode: "",
 };
 
 export default function Command() {
   const [isLoading, setLoadingStatus] = useState(false);
   const [toTranslate, setToTranslate] = useState("");
-  const [{ basic, translation, web, webdict }, setTranslateResult] = useState(defaultTranslateResult);
+  const [{ basic, translation, web }, setTranslateResult] = useState(defaultTranslateResult);
 
   useEffect(() => {
-    if (toTranslate === "") return;
+    if (!startsWith(toTranslate)) return;
 
     setLoadingStatus(true);
 
     (async () => {
-      const response = await translateAPI(toTranslate, "auto", "auto");
-      setTranslateResult(((await response.json()) as translateResult) || {});
+      const response = await translateAPI(toTranslate);
+      setTranslateResult(formatTranslateResult(((await response.json()) as TranslateResult) || {}, toTranslate.substring(0, 2)));
       setLoadingStatus(false);
     })();
   }, [toTranslate]);
-
-  const actionPanelUrl = useMemo(() => {
-    return webdict?.url || "";
-  }, [webdict?.url]);
 
   return (
     <List
@@ -122,24 +129,7 @@ export default function Command() {
           key={index}
           title={item}
           icon={{ source: Icon.Dot, tintColor: Color.Red }}
-          actions={<TranslateResultActionPanel copyContent={item} url={actionPanelUrl} />}
-        />
-      ))}
-      {basic?.explains?.map((item, index) => (
-        <List.Item
-          key={index}
-          title={item}
-          icon={{ source: Icon.Dot, tintColor: Color.Blue }}
-          actions={<TranslateResultActionPanel copyContent={item} url={actionPanelUrl} />}
-        />
-      ))}
-      {web?.map((item, index) => (
-        <List.Item
-          key={index}
-          title={item.value.join(", ")}
-          icon={{ source: Icon.Dot, tintColor: Color.Yellow }}
-          subtitle={item.key}
-          actions={<TranslateResultActionPanel copyContent={item.value.join(", ")} url={actionPanelUrl} />}
+          actions={<TranslateResultActionPanel copyContent={item} />}
         />
       ))}
     </List>
