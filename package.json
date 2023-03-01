@@ -1,0 +1,58 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "code-variable",
+  "title": "Code Variable",
+  "description": "Generate available code variables.",
+  "author": "Hongbusi",
+  "license": "MIT",
+  "icon": "icon.png",
+  "commands": [
+    {
+      "name": "code-variable",
+      "title": "Code Variable",
+      "subtitle": "Code Variable",
+      "description": "Generate available code variables.",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "app_key",
+      "type": "textfield",
+      "required": true,
+      "title": "APP Key",
+      "description": "You can get Youdao Translate APP code at https://ai.youdao.com/console/",
+      "placeholder": "Youdao Translate APP code"
+    },
+    {
+      "name": "app_secret",
+      "type": "password",
+      "required": true,
+      "title": "APP Secret",
+      "description": "You can get Youdao Translate APP secret at https://ai.youdao.com/console/",
+      "placeholder": "Youdao Translate APP Secret"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.48.5",
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.14.2",
+    "@types/react": "^18.0.28",
+    "@typescript-eslint/eslint-plugin": "^5.54.0",
+    "@typescript-eslint/parser": "^5.54.0",
+    "eslint": "^8.35.0",
+    "eslint-config-prettier": "^8.6.0",
+    "prettier": "^2.8.4",
+    "react-devtools": "^4.27.2",
+    "typescript": "^4.9.5"
+  },
+  "scripts": {
+    "build": "ray build -e dist",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "publish": "ray publish"
+  }
+}
