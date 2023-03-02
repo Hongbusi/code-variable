@@ -1,9 +1,32 @@
-import { difference, union } from 'lodash-es'
-import config from './config'
+import config from './config';
+import { difference, union, sample } from 'lodash-es';
 
-function filter(str: string): string[] {
+const { keys, commands, filter } = config;
+
+export function isStartWithCommand(str: string) {
+  return commands.includes(getCommand(str))
+}
+
+export function getCommand(str: string) {
+  return str.substring(0, 3)
+}
+
+export function getTranslateUrl(q: string) {
+  const selected = sample(keys) as { keyfrom: string; key: string };
+  const url = {
+    keyfrom: selected.keyfrom,
+    key: selected.key,
+    type: 'data',
+    doctype: 'json',
+    version: '1.1',
+    q,
+  };
+  return `http://fanyi.youdao.com/openapi.do?${new URLSearchParams(url).toString()}`;
+}
+
+function filterStr(str: string): string[] {
   str = str.toLowerCase();
-  const { prep, prefix, suffix, verb } = config.filter
+  const { prep, prefix, suffix, verb } = filter;
   return difference(str.split(' '), union(prep, prefix, suffix, verb));
 }
 
@@ -31,22 +54,20 @@ function toConst(words: string[]): string {
   return words.map(word => word.toUpperCase()).join('_')
 }
 
-export function format(str: string, type: string) {
-  const words = filter(str);
-  if (type === 'xt') {
-    return toCamelCase(words)
+export function format(str: string, command: string) {
+  const words = filterStr(str);
+  switch (command) {
+    case 'xt ':
+      return toCamelCase(words)
+    case 'dt ':
+      return toUpperCamelCase(words)
+    case 'xh ':
+      return toUnderline(words)
+    case 'zh ':
+      return toHyphenated(words)
+    case 'cl ':
+      return toConst(words)
+    default:
+      return ''
   }
-  if (type === 'dt') {
-    return toUpperCamelCase(words)
-  }
-  if (type === 'xh') {
-    return toUnderline(words)
-  }
-  if (type === 'zh') {
-    return toHyphenated(words)
-  }
-  if (type === 'cl') {
-    return toConst(words)
-  }
-  return ''
 }
