@@ -40,12 +40,14 @@ function formatTranslateResult(translateResult: TranslateResult, prefix: string)
     }
   })
   web?.forEach(item => {
-    if (reg.test(item.value.join(', '))) {
-      result.push(format(item.value.join(', '), prefix));
-    }
+    item.value?.forEach(i => {
+      if (reg.test(i)) {
+        result.push(format(i, prefix));
+      }
+    })
   })
 
-  return result
+  return [...new Set(result)]
 }
 
 function TranslateResultActionPanel(props: { copyContent: string }) {
