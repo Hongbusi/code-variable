@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import fetch from "node-fetch";
 import { Action, ActionPanel, Color, Icon, List } from "@raycast/api";
-import { format, getTranslateUrl, getCommand, isStartWithCommand }  from './utils'
+import { format, getTranslateUrl, getCommand, isStartWithCommand } from "./utils";
 
 interface TranslateWebResult {
   value: Array<string>;
@@ -29,25 +29,25 @@ function formatTranslateResult(translateResult: TranslateResult, prefix: string)
   const reg = /^[a-zA-Z ]/;
   const { translation, basic, web } = translateResult;
 
-  translation?.forEach(item => {
+  translation?.forEach((item) => {
     if (reg.test(item)) {
       result.push(format(item, prefix));
     }
-  })
-  basic?.explains?.forEach(item => {
+  });
+  basic?.explains?.forEach((item) => {
     if (reg.test(item)) {
       result.push(format(item, prefix));
     }
-  })
-  web?.forEach(item => {
-    item.value?.forEach(i => {
+  });
+  web?.forEach((item) => {
+    item.value?.forEach((i) => {
       if (reg.test(i)) {
         result.push(format(i, prefix));
       }
-    })
-  })
+    });
+  });
 
-  return [...new Set(result)]
+  return [...new Set(result)];
 }
 
 function TranslateResultActionPanel(props: { copyContent: string }) {
@@ -74,7 +74,9 @@ export default function Command() {
     (async () => {
       setLoadingStatus(true);
       const response = await translateAPI(searchText);
-      setTranslateResult(formatTranslateResult(((await response.json()) as TranslateResult) || {}, getCommand(inputText)));
+      setTranslateResult(
+        formatTranslateResult(((await response.json()) as TranslateResult) || {}, getCommand(inputText))
+      );
       setLoadingStatus(false);
     })();
   }, [inputText]);
